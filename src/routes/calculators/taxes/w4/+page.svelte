@@ -29,6 +29,10 @@
 	$: totalIncome = state.jobs.reduce((total, job) => total + job.expectedYearlyIncome, 0n);
 </script>
 
+<svelte:head>
+	<title>W-4 Calculator - Piper's Calculators</title>
+</svelte:head>
+
 <Form>
 	<h2>W-4 Calculator</h2>
 	<Alert color="warning">

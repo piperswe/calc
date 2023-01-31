@@ -1,3 +1,6 @@
+<svelte:head>
+	<title>Piper's Calculators</title>
+</svelte:head>
 <ul>
 	<li>
 		Taxes
