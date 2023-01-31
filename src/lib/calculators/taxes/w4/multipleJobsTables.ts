@@ -30,11 +30,11 @@ export interface MultipleJobsTable {
  * @param rowData Table data - copy the entire table below the header
  */
 function convertRowData(rowData: string): Row[] {
-	const rows = rowData.split('\n');
+	const rows = rowData.replace(/,/g, '').replace(/\$/g, '').split('\n');
 	return rows.map((row) => {
 		const cells = row.split(' ');
 		const cellsWithoutRange = cells.slice(3);
-		return cellsWithoutRange.map((cell) => BigInt(cell.replace(',', '').replace('$', '')));
+		return cellsWithoutRange.map((cell) => BigInt(cell));
 	});
 }
 
@@ -168,5 +168,6 @@ export function calculateAnnualWithholding(
 			row = i;
 		}
 	});
+	console.log({ column, row });
 	return table.rows[row][column];
 }

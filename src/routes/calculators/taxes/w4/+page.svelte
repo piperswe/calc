@@ -1,34 +1,32 @@
 <script lang="ts">
-	import { Form, Alert, InputGroup, FormGroup, Input } from 'sveltestrap';
+	import {
+		Form,
+		Alert,
+		FormGroup,
+		Input,
+		Button,
+		Card,
+		CardBody,
+		Accordion,
+		AccordionItem
+	} from 'sveltestrap';
 	import { FilingStatus } from '$lib/calculators/taxes/w4/types';
-	import { calculateAnnualWithholding } from '$lib/calculators/taxes/w4/multipleJobsTables';
+	import {
+		defaultFormState,
+		defaultJob,
+		deserializeFormState,
+		serializeFormState
+	} from '$lib/calculators/taxes/w4/form';
+	import PersonalInfo from '$lib/calculators/taxes/w4/PersonalInfo.svelte';
+	import { readFromLocalStorage, writeToLocalStorage } from '$lib/localstorage';
+	import Job from '$lib/calculators/taxes/w4/Job.svelte';
+	import { onChangeEventToBigint } from '$lib/bigint';
+	import { generateOutputForms } from '$lib/calculators/taxes/w4/generate';
 
-	let firstName = '';
-	let lastName = '';
-	let socialSecurityNumber = '';
-	let address = '';
-	let cityStateZIP = '';
-	let filingStatus: FilingStatus | null = null;
-
-	let myJobs = 1n;
-	let spouseJobs = 0n;
-	let highestPayingJob = true;
-	let highestSalary = 0n;
-	let lowestSalary = 0n;
-	let payPeriods = 26n;
-
-	let totalExpectedIncome = 0n;
-	let qualifyingChildren = 0n;
-	let dependents = 0n;
-	let otherIncome = 0n;
-	let deductions = 0n;
-	let extraWithholding = 0n;
-
-	$: totalJobs = myJobs + spouseJobs;
-	$: showMultipleJobsWorksheet = highestPayingJob && totalJobs > 1;
-	$: multipleJobsAnnualWithholding = showMultipleJobsWorksheet
-		? calculateAnnualWithholding(highestSalary, lowestSalary, filingStatus || FilingStatus.Single)
-		: 0;
+	const key = 'calculators/taxes/w4';
+	let state = readFromLocalStorage(key, deserializeFormState) ?? defaultFormState();
+	$: writeToLocalStorage(key, state, serializeFormState);
+	$: totalIncome = state.jobs.reduce((total, job) => total + job.expectedYearlyIncome, 0n);
 </script>
 
 <Form>
@@ -37,78 +35,101 @@
 		This calculator was created as a programming exercise. Check its output yourself - it may not
 		always produce the correct output.
 	</Alert>
-	<h2>Step 1: Enter Personal Information</h2>
-	<InputGroup>
-		<FormGroup floating label="First name and middle initial">
-			<Input bind:value={firstName} />
-		</FormGroup>
-		<FormGroup floating label="Last name">
-			<Input bind:value={lastName} />
-		</FormGroup>
-		<FormGroup floating label="Social security number">
-			<Input bind:value={socialSecurityNumber} />
-		</FormGroup>
-	</InputGroup>
-	<FormGroup floating label="Address">
-		<Input bind:value={address} />
-	</FormGroup>
-	<FormGroup floating label="City or town, state, and ZIP code">
-		<Input bind:value={cityStateZIP} />
-	</FormGroup>
-	<FormGroup>
-		<Input
-			type="radio"
-			bind:group={filingStatus}
-			value={FilingStatus.Single}
-			label="Single or Married filing separately"
-		/>
-		<Input
-			type="radio"
-			bind:group={filingStatus}
-			value={FilingStatus.Married}
-			label="Married filing jointly or Qualifying surviving spouse"
-		/>
-		<Input
-			type="radio"
-			bind:group={filingStatus}
-			value={FilingStatus.HeadOfHousehold}
-			label="Head of household (Check only if you're unmarried and pay more than half the costs of keeping up a home for yourself and a qualifying individual.)"
-		/>
-	</FormGroup>
-	<h2>Step 2: Multiple Jobs or Spouse Works</h2>
-	<FormGroup floating label="My job count">
-		<Input type="number" min={0} bind:value={myJobs} />
-	</FormGroup>
-	{#if filingStatus === FilingStatus.Married}
-		<FormGroup floating label="My spouse's job count">
-			<Input type="number" min={0} bind:value={spouseJobs} />
-		</FormGroup>
-	{/if}
-	{#if totalJobs > 1}
-		<FormGroup>
-			<Input
-				type="checkbox"
-				bind:value={highestPayingJob}
-				label="Of my and my spouse's jobs, the job this W-4 is being filled for is the highest paying"
-			/>
-		</FormGroup>
-	{/if}
-	{#if showMultipleJobsWorksheet}
-		<h3>Step 2(b) - Multiple Jobs Worksheet</h3>
-		{#if totalJobs > 2}
-			<Alert color="danger">This calculator doesn't support more than 2 jobs.</Alert>
+	<Button
+		on:click={() =>
+			confirm('Are you sure you want to reset this form?') && (state = defaultFormState())}
+		color="danger"
+		class="mb-3">Reset</Button
+	>
+	<Accordion stayOpen>
+		<AccordionItem active header="Filing Status">
+			<FormGroup>
+				<Input
+					type="radio"
+					bind:group={state.filingStatus}
+					value={FilingStatus.Single}
+					label="Single or Married filing separately"
+				/>
+				<Input
+					type="radio"
+					bind:group={state.filingStatus}
+					value={FilingStatus.Married}
+					label="Married filing jointly or Qualifying surviving spouse"
+				/>
+				<Input
+					type="radio"
+					bind:group={state.filingStatus}
+					value={FilingStatus.HeadOfHousehold}
+					label="Head of household (Check only if you're unmarried and pay more than half the costs of keeping up a home for yourself and a qualifying individual.)"
+				/>
+			</FormGroup>
+		</AccordionItem>
+		<AccordionItem active header="Personal Information">
+			<PersonalInfo bind:personalInfo={state.personalInfo} />
+		</AccordionItem>
+		{#if state.filingStatus === FilingStatus.Married}
+			<AccordionItem active header="Spouse Information">
+				<PersonalInfo bind:personalInfo={state.spouseInfo} />
+			</AccordionItem>
 		{/if}
-		<FormGroup floating label="Highest paying job's estimated yearly pay">
-			<Input type="number" min={0} bind:value={highestSalary} />
-		</FormGroup>
-		<FormGroup floating label="Lowest paying job's estimated yearly pay">
-			<Input type="number" min={0} bind:value={lowestSalary} />
-		</FormGroup>
-		<FormGroup
-			floating
-			label="Pay periods per year (pays weekly => 52, pays every other week => 26, pays monthly => 12, pays twice a month => 24, etc.)"
-		>
-			<Input type="number" min={0} bind:value={payPeriods} />
-		</FormGroup>
-	{/if}
+		<AccordionItem active header="Jobs">
+			<p>List all jobs held by you and your spouse.</p>
+			{#if state.jobs.length > 2}
+				<Alert color="danger">This calculator doesn't support more than 2 jobs.</Alert>
+			{/if}
+			{#each state.jobs as job}
+				<Card class="mb-3">
+					<CardBody>
+						<Job bind:job filingStatus={state.filingStatus} />
+						<Button
+							on:click={() => (state.jobs = state.jobs.filter((x) => x !== job))}
+							color="danger">Remove Job</Button
+						>
+					</CardBody>
+				</Card>
+			{/each}
+			<Button on:click={() => (state.jobs = [...state.jobs, defaultJob()])}>Add Job</Button>
+		</AccordionItem>
+		<AccordionItem active header="Dependents">
+			{#if state.filingStatus === FilingStatus.Married ? totalIncome <= 400000n : totalIncome <= 200000n}
+				<FormGroup floating label="Number of children">
+					<Input type="number" min={0} bind:value={state.dependents.children} />
+				</FormGroup>
+				<FormGroup floating label="Number of other dependents">
+					<Input type="number" min={0} bind:value={state.dependents.other} />
+				</FormGroup>
+			{:else}
+				<Alert color="warning">You are not eligible to claim dependents.</Alert>
+			{/if}
+		</AccordionItem>
+		<AccordionItem active header="Other Adjustments">
+			<FormGroup floating label="Other income (not from jobs)">
+				<Input
+					type="number"
+					min={0}
+					value={state.adjustments.otherIncome}
+					on:change={(event) => (state.adjustments.otherIncome = onChangeEventToBigint(event))}
+				/>
+			</FormGroup>
+			<FormGroup floating label="Deductions">
+				<Input
+					type="number"
+					min={0}
+					value={state.adjustments.deductions}
+					on:change={(event) => (state.adjustments.deductions = onChangeEventToBigint(event))}
+				/>
+			</FormGroup>
+			<FormGroup floating label="Extra withholding">
+				<Input
+					type="number"
+					min={0}
+					value={state.adjustments.extraWithholding}
+					on:change={(event) => (state.adjustments.extraWithholding = onChangeEventToBigint(event))}
+				/>
+			</FormGroup>
+		</AccordionItem>
+		<AccordionItem active header="Results">
+			<pre><code>{JSON.stringify(generateOutputForms(state), null, 4)}</code></pre>
+		</AccordionItem>
+	</Accordion>
 </Form>
