@@ -4,5 +4,6 @@
 
 <Styles />
 <div class="container">
+	<h1><a href="/">Piper's Calculators</a></h1>
 	<slot />
 </div>

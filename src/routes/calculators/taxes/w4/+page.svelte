@@ -30,7 +30,7 @@
 </script>
 
 <Form>
-	<h1>W-4 Calculator</h1>
+	<h2>W-4 Calculator</h2>
 	<Alert color="warning">
 		This calculator was created as a programming exercise. Check its output yourself - it may not
 		always produce the correct output.
