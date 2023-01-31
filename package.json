@@ -32,7 +32,6 @@
 	},
 	"type": "module",
 	"dependencies": {
-		"pako": "^2.1.0",
 		"sveltestrap": "^5.10.0"
 	}
 }
