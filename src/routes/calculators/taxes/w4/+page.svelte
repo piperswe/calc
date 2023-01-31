@@ -47,25 +47,49 @@
 	>
 	<Accordion stayOpen>
 		<AccordionItem active header="Filing Status">
+			<p>
+				Check your anticipated filing status. This will determine the standard deduction and tax
+				rates used to compute your withholding.
+			</p>
 			<FormGroup>
-				<Input
-					type="radio"
-					bind:group={state.filingStatus}
-					value={FilingStatus.Single}
-					label="Single or Married filing separately"
-				/>
-				<Input
-					type="radio"
-					bind:group={state.filingStatus}
-					value={FilingStatus.Married}
-					label="Married filing jointly or Qualifying surviving spouse"
-				/>
-				<Input
-					type="radio"
-					bind:group={state.filingStatus}
-					value={FilingStatus.HeadOfHousehold}
-					label="Head of household (Check only if you're unmarried and pay more than half the costs of keeping up a home for yourself and a qualifying individual.)"
-				/>
+				<div class="form-check">
+					<input
+						class="form-check-input"
+						id="filingStatus-single"
+						type="radio"
+						value={FilingStatus.Single}
+						bind:group={state.filingStatus}
+					/>
+					<label class="form-check-label" for="filingStatus-single"
+						><strong>Single</strong> or <strong>Married filing separately</strong></label
+					>
+				</div>
+				<div class="form-check">
+					<input
+						class="form-check-input"
+						id="filingStatus-married"
+						type="radio"
+						value={FilingStatus.Married}
+						bind:group={state.filingStatus}
+					/>
+					<label class="form-check-label" for="filingStatus-married"
+						><strong>Married filing jointly</strong> or
+						<strong>Qualifying surviving spouse</strong></label
+					>
+				</div>
+				<div class="form-check">
+					<input
+						class="form-check-input"
+						id="filingStatus-hoh"
+						type="radio"
+						value={FilingStatus.HeadOfHousehold}
+						bind:group={state.filingStatus}
+					/>
+					<label class="form-check-label" for="filingStatus-hoh"
+						><strong>Head of household</strong> (Check only if you're unmarried and pay more than half
+						the costs of keeping up a home for yourself and a qualifying individual)</label
+					>
+				</div>
 			</FormGroup>
 		</AccordionItem>
 		<AccordionItem active header="Personal Information">
@@ -77,7 +101,7 @@
 			</AccordionItem>
 		{/if}
 		<AccordionItem active header="Jobs">
-			<p>List all jobs held by you and your spouse.</p>
+			<p>List all jobs held by you and your spouse. A W-4 form will be generated for each job.</p>
 			{#if state.jobs.length > 2}
 				<Alert color="danger">This calculator doesn't support more than 2 jobs.</Alert>
 			{/if}
@@ -96,7 +120,13 @@
 		</AccordionItem>
 		<AccordionItem active header="Dependents">
 			{#if state.filingStatus === FilingStatus.Married ? totalIncome <= 400000n : totalIncome <= 200000n}
-				<FormGroup floating label="Number of children">
+				<p>
+					To qualify for the child tax credit, a child must be under age 17 as of December 31, must
+					be your dependent who generally lives with you for more than half the year, and must have
+					the required social security number. If a child does not qualify for the child tax credit,
+					they may still be a dependent.
+				</p>
+				<FormGroup floating label="Number of qualifying children">
 					<Input type="number" min={0} bind:value={state.dependents.children} />
 				</FormGroup>
 				<FormGroup floating label="Number of other dependents">
@@ -107,6 +137,10 @@
 			{/if}
 		</AccordionItem>
 		<AccordionItem active header="Other Adjustments">
+			<p>
+				If you have any other income, such as from self employment or "gig" jobs, include your
+				estimated yearly other income.
+			</p>
 			<FormGroup floating label="Other income (not from jobs)">
 				<Input
 					type="number"
@@ -115,6 +149,7 @@
 					on:change={(event) => (state.adjustments.otherIncome = onChangeEventToBigint(event))}
 				/>
 			</FormGroup>
+			<p>The deductions worksheet is coming soon.</p>
 			<FormGroup floating label="Deductions">
 				<Input
 					type="number"
@@ -123,6 +158,12 @@
 					on:change={(event) => (state.adjustments.deductions = onChangeEventToBigint(event))}
 				/>
 			</FormGroup>
+			<p>
+				If you would like to have more money withheld from your paycheck for whatever reason, add it
+				here. This amount is <strong>per pay period</strong> and will be withheld from each job's paycheck.
+				Withholdings based on the Multiple Jobs Worksheet will be automatically added to the resulting
+				forms - you don't need to enter them here.
+			</p>
 			<FormGroup floating label="Extra withholding">
 				<Input
 					type="number"

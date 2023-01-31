@@ -5,6 +5,7 @@
 	export let personalInfo: PersonalInfo;
 </script>
 
+<p>This name and social security number should match the details on your tax return, Form 1040.</p>
 <InputGroup>
 	<FormGroup floating label="First name and middle initial">
 		<Input bind:value={personalInfo.firstName} />
