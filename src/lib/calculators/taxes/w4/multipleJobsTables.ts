@@ -168,6 +168,5 @@ export function calculateAnnualWithholding(
 			row = i;
 		}
 	});
-	console.log({ column, row });
 	return table.rows[row][column];
 }
