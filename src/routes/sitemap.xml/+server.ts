@@ -5,18 +5,23 @@ import { allLinks } from '$lib/sitemap';
 const domImplementation = new DOMImplementation();
 const serializer = new XMLSerializer();
 
+function addLink(path: string, doc: ReturnType<(typeof domImplementation)['createDocument']>) {
+	const url = doc.createElement('url');
+	const loc = doc.createElement('loc');
+	const locText = doc.createTextNode('https://calc.piperswe.me' + path);
+	loc.appendChild(locText);
+	url.appendChild(loc);
+	doc.documentElement.appendChild(url);
+}
+
 function generateSitemap(): string {
 	const doc = domImplementation.createDocument(
 		'https://www.sitemaps.org/schemas/sitemap/0.9',
 		'urlset'
 	);
+	addLink('/', doc);
 	for (const link of allLinks()) {
-		const url = doc.createElement('url');
-		const loc = doc.createElement('loc');
-		const locText = doc.createTextNode('https://calc.piperswe.me' + link.path);
-		loc.appendChild(locText);
-		url.appendChild(loc);
-		doc.documentElement.appendChild(url);
+		addLink(link.path, doc);
 	}
 	const serialized = serializer.serializeToString(doc);
 	return (
